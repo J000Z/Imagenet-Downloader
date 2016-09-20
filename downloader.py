@@ -22,23 +22,23 @@ def worker(cur, cur_lock, collection):
         if 'status' in row and row['status'] == 200:
             continue
         try:
-            r = requests.get(row.url)
+            r = requests.get(row['url'])
             if (r.status_code == 200):
                 b = Binary(BytesIO(r.content).getvalue())
                 collection.update_one({'_id': row['_id']},
                                       {"$set": {'data': b,
                                                 'status': 200}})
-                logging.debug('{} {}'.format(row.id, 'done'))
+                logging.debug('{} {}'.format(row['id'], 'done'))
             else:
                 collection.update_one({'_id': row['_id']},
                                       {"$set": {'data': None,
                                                 'status': r.status_code}})
-                logging.debug('{} {}'.format(row.id, 'failed'))
+                logging.debug('{} {}'.format(row['id'], 'failed'))
         except requests.exceptions.RequestException as e:
             collection.update_one({'_id': row['_id']},
                                   {"$set": {'data': None,
                                             'status': -1}})
-            logging.debug('{} {}'.format(row.id, str(e)))
+            logging.debug('{} {}'.format(row['id'], str(e)))
     logging.debug('stop')
 
 client = MongoClient()
