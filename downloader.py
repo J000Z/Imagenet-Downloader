@@ -28,15 +28,17 @@ def worker(cur, cur_lock, collection):
                 collection.update_one({'_id': row['_id']},
                                       {"$set": {'data': b,
                                                 'status': 200}})
+                logging.debug('{} {}'.format(row.id, 'done'))
             else:
                 collection.update_one({'_id': row['_id']},
                                       {"$set": {'data': None,
                                                 'status': r.status_code}})
+                logging.debug('{} {}'.format(row.id, 'failed'))
         except requests.exceptions.RequestException e:
             collection.update_one({'_id': row['_id']},
                                   {"$set": {'data': None,
                                             'status': -1}})
-            logging.error(str(e))
+            logging.debug('{} {}'.format(row.id, str(e)))
     logging.debug('stop')
 
 client = MongoClient()
