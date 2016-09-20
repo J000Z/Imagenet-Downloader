@@ -34,7 +34,7 @@ def worker(cur, cur_lock, collection):
                                       {"$set": {'data': None,
                                                 'status': r.status_code}})
                 logging.debug('{} {}'.format(row.id, 'failed'))
-        except requests.exceptions.RequestException e:
+        except requests.exceptions.RequestException as e:
             collection.update_one({'_id': row['_id']},
                                   {"$set": {'data': None,
                                             'status': -1}})
