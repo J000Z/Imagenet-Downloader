@@ -3,28 +3,40 @@ import logging
 from pymongo import MongoClient
 import requests
 from io import BytesIO
+from bson.binary import Binary
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
                     )
 
 
-def worker(cur, cur_lock):
+def worker(cur, cur_lock, collection):
     logging.debug('start')
+    row = None
     while True:
         with cursor_lock:
-            row = None
             try:
                 row = cur.next()
             except StopIteration:
                 break
+        if 'status' in row and row['status'] == 200:
+            continue
+        try:
             r = requests.get(row.url)
             if (r.status_code == 200):
-                # TODO
-                BytesIO(r.content)
+                b = Binary(BytesIO(r.content).getvalue())
+                collection.update_one({'_id': row['_id']},
+                                      {"$set": {'data': b,
+                                                'status': 200}})
             else:
-                pass
-                # TODO retry and log failed
+                collection.update_one({'_id': row['_id']},
+                                      {"$set": {'data': None,
+                                                'status': r.status_code}})
+        except requests.exceptions.RequestException e:
+            collection.update_one({'_id': row['_id']},
+                                  {"$set": {'data': None,
+                                            'status': -1}})
+            logging.error(str(e))
     logging.debug('stop')
 
 client = MongoClient()
@@ -33,10 +45,10 @@ cursor = collection.find().sort("_id")
 cursor_lock = threading.Lock()
 
 threads = []
-for i in range(5):
-    t = threading.Thread(name='worker_{}'.format(cursor, cursor_lock),
+for i in range(10):
+    t = threading.Thread(name='worker_{}'.format(i),
                          target=worker,
-                         args=(cursor,))
+                         args=(cursor, cursor_lock, collection, ))
     threads.append(t)
     t.start()
 
