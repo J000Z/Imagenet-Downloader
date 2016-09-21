@@ -9,11 +9,13 @@ logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
                     )
 
+count = 0
 
-def worker(cur, cur_lock, collection):
+
+def worker(cur, cur_lock, collection, run_event):
     logging.debug('start')
     row = None
-    while True:
+    while run_event.is_set():
         with cursor_lock:
             try:
                 row = cur.next()
@@ -39,6 +41,9 @@ def worker(cur, cur_lock, collection):
                                   {"$set": {'data': None,
                                             'status': -1}})
             logging.debug('{} {}'.format(row['id'], str(e)))
+        logging.debug('progress {} {}%'.format(count,
+                                               float(count)/14197121.*100.))
+        count += 1
     logging.debug('stop')
 
 client = MongoClient()
@@ -46,15 +51,25 @@ collection = client.imagenet.urls
 cursor = collection.find().sort("_id")
 cursor_lock = threading.Lock()
 
+run_event = threading.Event()
+run_event.set()
+
 threads = []
 for i in range(10):
     t = threading.Thread(name='worker_{}'.format(i),
                          target=worker,
-                         args=(cursor, cursor_lock, collection, ))
+                         args=(cursor, cursor_lock, collection, run_event, ))
     threads.append(t)
     t.start()
 
-for t in threads:
-    t.join()
+try:
+    while 1:
+        time.sleep(.1)
+except KeyboardInterrupt:
+    logging.debug('attempting to close threads')
+    run_event.clear()
+    for t in threads:
+        t.join()
+    logging.debug('threads successfully closed')
 
 logging.debug('all done')
