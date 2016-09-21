@@ -8,6 +8,11 @@ from io import BytesIO
 from bson.binary import Binary
 import time
 import sys
+from requests.adapters import HTTPAdapter
+
+s = requests.Session()
+s.mount('http://', HTTPAdapter(max_retries=1))
+s.mount('https://', HTTPAdapter(max_retries=1))
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s')
@@ -27,7 +32,7 @@ def worker(cur, cur_lock, collection, run_event, info):
         if 'status' in row and row['status'] == 200:
             continue
         try:
-            r = requests.get(row['url'])
+            r = requests.get(row['url'], timeout=1)
             if (r.status_code == 200):
                 b = Binary(BytesIO(r.content).getvalue())
                 collection.update_one({'_id': row['_id']},
