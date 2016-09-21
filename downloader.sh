@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./downloader.py 30
+python ./downloader.py 30
