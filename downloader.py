@@ -7,9 +7,10 @@ from bson.binary import Binary
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    filename='log.txt'
                     )
 
-info = {count: 0., total: 14197121.}
+info = {'count': 0., 'total': 14197121.}
 
 
 def worker(cur, cur_lock, collection, run_event, info):
