@@ -10,9 +10,7 @@ import time
 import sys
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
-                    filename='log.txt'
-                    )
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s')
 
 info = {'count': 0., 'total': 14197121.}
 
