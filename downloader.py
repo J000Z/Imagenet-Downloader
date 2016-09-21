@@ -9,10 +9,10 @@ logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
                     )
 
-count = 0
+info = {count: 0., total: 14197121.}
 
 
-def worker(cur, cur_lock, collection, run_event):
+def worker(cur, cur_lock, collection, run_event, info):
     logging.debug('start')
     row = None
     while run_event.is_set():
@@ -41,9 +41,11 @@ def worker(cur, cur_lock, collection, run_event):
                                   {"$set": {'data': None,
                                             'status': -1}})
             logging.debug('{} {}'.format(row['id'], str(e)))
-        logging.debug('progress {} {}%'.format(count,
-                                               float(count)/14197121.*100.))
-        count += 1
+        logging.debug('progress {}/{} {}%'.format(
+            info['count'],
+            info['total'],
+            info['count']/info['total'].*100.))
+        info['count'] += 1
     logging.debug('stop')
 
 client = MongoClient()
@@ -58,13 +60,17 @@ threads = []
 for i in range(10):
     t = threading.Thread(name='worker_{}'.format(i),
                          target=worker,
-                         args=(cursor, cursor_lock, collection, run_event, ))
+                         args=(cursor,
+                               cursor_lock,
+                               collection,
+                               run_event,
+                               info, ))
     threads.append(t)
     t.start()
 
 try:
     while 1:
-        time.sleep(.1)
+        time.sleep(1000)
 except KeyboardInterrupt:
     logging.debug('attempting to close threads')
     run_event.clear()
