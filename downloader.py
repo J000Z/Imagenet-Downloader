@@ -44,7 +44,7 @@ def worker(cur, cur_lock, collection, run_event, info):
         logging.debug('progress {}/{} {}%'.format(
             info['count'],
             info['total'],
-            info['count']/info['total'].*100.))
+            info['count']/info['total']*100))
         info['count'] += 1
     logging.debug('stop')
 
