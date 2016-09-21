@@ -4,6 +4,8 @@ from pymongo import MongoClient
 import requests
 from io import BytesIO
 from bson.binary import Binary
+import time
+import sys
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
@@ -58,7 +60,7 @@ run_event = threading.Event()
 run_event.set()
 
 threads = []
-for i in range(10):
+for i in range(int(sys.argv[1])):
     t = threading.Thread(name='worker_{}'.format(i),
                          target=worker,
                          args=(cursor,
@@ -71,7 +73,7 @@ for i in range(10):
 
 try:
     while 1:
-        time.sleep(1000)
+        time.sleep(.1)
 except KeyboardInterrupt:
     logging.debug('attempting to close threads')
     run_event.clear()
