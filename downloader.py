@@ -77,25 +77,30 @@ cursor_lock = threading.Lock()
 run_event = threading.Event()
 run_event.set()
 
-threads = []
+
+def genThread(i):
+    return threading.Thread(name='worker_{}'.format(i),
+                            target=worker,
+                            args=(cursor,
+                                  cursor_lock,
+                                  collection,
+                                  run_event,
+                                  info, ))
+threads = {}
 for i in range(int(sys.argv[1])):
-    t = threading.Thread(name='worker_{}'.format(i),
-                         target=worker,
-                         args=(cursor,
-                               cursor_lock,
-                               collection,
-                               run_event,
-                               info, ))
-    threads.append(t)
-    t.start()
+    threads[i] = genThread(i)
+    threads[i].start()
 
 try:
     while 1:
-        time.sleep(.1)
+        time.sleep(1)
+        for k, t in threads.items():
+            if not t.isAlive():
+                threads[k] = genThread(k)
 except KeyboardInterrupt:
     logging.debug('attempting to close threads')
     run_event.clear()
-    for t in threads:
+    for t in threads.values():
         t.join()
     logging.debug('threads successfully closed')
 
