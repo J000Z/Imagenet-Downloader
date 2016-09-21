@@ -20,6 +20,36 @@ logging.basicConfig(level=logging.DEBUG,
 info = {'count': 0., 'total': 14197121.}
 
 
+def process(row, collection, retry=0):
+    if retry == 2:
+        collection.update_one({'_id': row['_id']},
+                              {"$set": {'data': None,
+                                        'status': -2}})
+        logging.debug('{} {}'.format(row['id'], "max retry"))
+        return
+    try:
+        r = requests.get(row['url'], timeout=1)
+        if (r.status_code == 200):
+            b = Binary(BytesIO(r.content).getvalue())
+            collection.update_one({'_id': row['_id']},
+                                  {"$set": {'data': b,
+                                            'status': 200}})
+            logging.debug('{} {}'.format(row['id'], 'done'))
+        else:
+            collection.update_one({'_id': row['_id']},
+                                  {"$set": {'data': None,
+                                            'status': r.status_code}})
+            logging.debug('{} {}'.format(row['id'], 'failed'))
+    except requests.exceptions.ConnectionError:
+        time.sleep(60)
+        process(row, collection, retry+1)
+    except Exception as e:
+        collection.update_one({'_id': row['_id']},
+                              {"$set": {'data': None,
+                                        'status': -1}})
+        logging.debug('{} {}'.format(row['id'], str(e)))
+
+
 def worker(cur, cur_lock, collection, run_event, info):
     logging.debug('start')
     row = None
@@ -31,24 +61,7 @@ def worker(cur, cur_lock, collection, run_event, info):
                 break
         if 'status' in row:
             continue
-        try:
-            r = requests.get(row['url'], timeout=1)
-            if (r.status_code == 200):
-                b = Binary(BytesIO(r.content).getvalue())
-                collection.update_one({'_id': row['_id']},
-                                      {"$set": {'data': b,
-                                                'status': 200}})
-                logging.debug('{} {}'.format(row['id'], 'done'))
-            else:
-                collection.update_one({'_id': row['_id']},
-                                      {"$set": {'data': None,
-                                                'status': r.status_code}})
-                logging.debug('{} {}'.format(row['id'], 'failed'))
-        except Exception as e:
-            collection.update_one({'_id': row['_id']},
-                                  {"$set": {'data': None,
-                                            'status': -1}})
-            logging.debug('{} {}'.format(row['id'], str(e)))
+        process(row, collection)
         logging.debug('progress {}/{} {}%'.format(
             info['count'],
             info['total'],
