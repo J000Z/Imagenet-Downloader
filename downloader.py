@@ -29,7 +29,7 @@ def worker(cur, cur_lock, collection, run_event, info):
                 row = cur.next()
             except StopIteration:
                 break
-        if 'status' in row and row['status'] == 200:
+        if 'status' in row:
             continue
         try:
             r = requests.get(row['url'], timeout=1)
@@ -44,7 +44,7 @@ def worker(cur, cur_lock, collection, run_event, info):
                                       {"$set": {'data': None,
                                                 'status': r.status_code}})
                 logging.debug('{} {}'.format(row['id'], 'failed'))
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             collection.update_one({'_id': row['_id']},
                                   {"$set": {'data': None,
                                             'status': -1}})
