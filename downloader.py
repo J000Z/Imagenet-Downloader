@@ -97,6 +97,7 @@ try:
         for k, t in threads.items():
             if not t.isAlive():
                 threads[k] = genThread(k)
+                threads[k].start()
 except KeyboardInterrupt:
     logging.debug('attempting to close threads')
     run_event.clear()
