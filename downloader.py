@@ -14,8 +14,9 @@ s = requests.Session()
 s.mount('http://', HTTPAdapter(max_retries=1))
 s.mount('https://', HTTPAdapter(max_retries=1))
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[%(levelname)s] (%(threadName)-10s) %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s')
 
 info = {'count': 0., 'total': 14197121.}
 
