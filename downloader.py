@@ -56,6 +56,7 @@ def worker(cur, cur_lock, collection, run_event, info):
     row = None
     while run_event.is_set():
         with cursor_lock:
+            info['count'] += 1
             try:
                 row = cur.next()
             except StopIteration:
@@ -67,7 +68,6 @@ def worker(cur, cur_lock, collection, run_event, info):
             info['count'],
             info['total'],
             info['count']/info['total']*100))
-        info['count'] += 1
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
 client = MongoClient()
