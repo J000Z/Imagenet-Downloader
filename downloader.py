@@ -18,7 +18,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s')
 
-info = {'count': 0., 'total': 14197121.}
+info = {'count': 0., 'total': 14197121., 'cursor_valid': True}
 
 
 def process(row, collection, retry=0):
@@ -60,6 +60,8 @@ def worker(cur, cur_lock, collection, run_event, info):
             try:
                 row = cur.next()
             except StopIteration:
+                logging.debug('StopIteration')
+                info['cursor_valid'] = False
                 break
         if 'status' in row:
             continue
@@ -72,7 +74,7 @@ def worker(cur, cur_lock, collection, run_event, info):
 
 client = MongoClient()
 collection = client.imagenet.urls
-cursor = collection.find().sort("_id")
+cursor = collection.find({'status': {'$exists': False}}).sort("_id")
 cursor_lock = threading.Lock()
 
 run_event = threading.Event()
@@ -95,6 +97,12 @@ for i in range(int(sys.argv[1])):
 try:
     while 1:
         time.sleep(1)
+        if not info['cursor_valid']:
+            with cursor_lock:
+                cursor = collection
+                .find({'status': {'$exists': False}})
+                .sort("_id")
+                info['cursor_valid'] = True
         for k, t in threads.items():
             if not t.isAlive():
                 threads[k] = genThread(k)
