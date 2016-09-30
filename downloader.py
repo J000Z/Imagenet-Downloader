@@ -23,10 +23,10 @@ info = {'count': 0., 'total': 14197121.}
 
 def process(row, collection, retry=0):
     id_, url = row.split()
-    with collection.find_one({"id": id_}) as item:
-        if 'status' in item and item['status'] != -1:
-            logging.debug('{} {}'.format(id_, "skip with status"))
-            return
+    item = collection.find_one({"id": id_})
+    if 'status' in item and item['status'] != -1:
+        logging.debug('{} {}'.format(id_, "skip with status"))
+        return
     if retry == 2:
         collection.update_one({'id': id_},
                               {"$set": {'data': None,
