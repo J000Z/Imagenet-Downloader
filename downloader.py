@@ -92,9 +92,12 @@ def genThread(i):
                                   run_event,
                                   info, ))
 threads = {}
-for i in range(int(sys.argv[1])):
+threads_count = int(sys.argv[1])
+for i in range(threads_count):
     threads[i] = genThread(i)
     threads[i].start()
+    if threads_count > 20:
+        time.sleep(1)
 
 try:
     while 1:
