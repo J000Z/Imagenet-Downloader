@@ -23,9 +23,10 @@ info = {'count': 0., 'total': 14197121.}
 
 def process(row, collection, retry=0):
     id_, url = row.split()
-    if 'status' in collection.find_one({"id": id_}):
-        logging.debug('skip with status')
-        return
+    with collection.find_one({"id": id_}) as item:
+        if 'status' in item and item['status'] != -1:
+            logging.debug('{} {}'.format(id_, "skip with status"))
+            return
     if retry == 2:
         collection.update_one({'id': id_},
                               {"$set": {'data': None,
@@ -33,7 +34,7 @@ def process(row, collection, retry=0):
         logging.debug('{} {}'.format(id_, "max retry"))
         return
     try:
-        r = requests.get(row['url'], timeout=1)
+        r = requests.get(url, timeout=1)
         if (r.status_code == 200):
             b = Binary(BytesIO(r.content).getvalue())
             collection.update_one({'id': id_},
@@ -49,9 +50,9 @@ def process(row, collection, retry=0):
         time.sleep(60)
         process(row, collection, retry+1)
     except Exception as e:
-        collection.update_one({'id': id_},
-                              {"$set": {'data': None,
-                                        'status': -1}})
+        # collection.update_one({'id': id_},
+        #                      {"$set": {'data': None,
+        #                                'status': -1}})
         logging.debug('{} {}'.format(id_, str(e)))
 
 
@@ -78,6 +79,10 @@ collection = client.imagenet.urls
 cursor = open('/root/imagenet/fall11_urls.txt', 'r')
 # cursor = collection.find({'status': {'$exists': False}}).sort("_id")
 cursor_lock = threading.Lock()
+skip = int(sys.argv[2])
+logging.debug('skip {}'.format(skip))
+for _ in xrange(skip):
+    cursor.next()
 
 run_event = threading.Event()
 run_event.set()
