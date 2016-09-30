@@ -74,7 +74,7 @@ def worker(cur, cur_lock, collection, run_event, info):
             info['count']/info['total']*100))
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
-client = MongoClient()
+client = MongoClient(maxPoolSize=None)
 collection = client.imagenet.urls
 cursor = open('/root/imagenet/fall11_urls.txt', 'r')
 # cursor = collection.find({'status': {'$exists': False}}).sort("_id")
