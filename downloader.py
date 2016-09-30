@@ -118,4 +118,5 @@ except KeyboardInterrupt:
         t.join()
     logging.debug('threads successfully closed')
 
+cursor.close()
 logging.debug('all done')
