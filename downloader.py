@@ -30,6 +30,7 @@ def process(row, collection, retry=0):
         logging.debug('{} {}'.format(id_, "skip with status"))
         return
     if retry == 2:
+        statsd.increment('url.failed')
         collection.update_one({'id': id_},
                               {"$set": {'data': None,
                                         'status': -2}})
@@ -44,6 +45,7 @@ def process(row, collection, retry=0):
                                             'status': 200}})
             logging.debug('{} {}'.format(id_, 'done'))
         else:
+            statsd.increment('url.failed')
             collection.update_one({'id': id_},
                                   {"$set": {'data': None,
                                             'status': r.status_code}})
@@ -52,6 +54,7 @@ def process(row, collection, retry=0):
         time.sleep(60)
         process(row, collection, retry+1)
     except Exception as e:
+        statsd.increment('url.failed')
         # collection.update_one({'id': id_},
         #                      {"$set": {'data': None,
         #                                'status': -1}})
