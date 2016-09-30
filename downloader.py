@@ -9,6 +9,8 @@ from bson.binary import Binary
 import time
 import sys
 from requests.adapters import HTTPAdapter
+from datadog import statsd
+from datadog.api.constants import CheckStatus
 
 s = requests.Session()
 s.mount('http://', HTTPAdapter(max_retries=1))
@@ -67,12 +69,15 @@ def worker(cur, cur_lock, collection, run_event, info):
             except StopIteration:
                 logging.debug('StopIteration')
                 break
+        statsd.increment('url.process')
         process(row, collection)
         with cursor_lock:
+            progress = info['count']/info['total']*100
             logging.debug('progress {}/{} {}%'.format(
                 info['count'],
                 info['total'],
-                info['count']/info['total']*100))
+                progress))
+            statsd.gauge('url.downloader.progress', progress)
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
 client = MongoClient(maxPoolSize=None)
@@ -106,7 +111,10 @@ for i in range(threads_count):
 
 try:
     while 1:
-        time.sleep(1)
+        time.sleep(5)
+        statsd.service_check(check_name='url.downloader',
+                             status=CheckStatus.OK,
+                             message='heart beat ok')
         for k, t in threads.items():
             if not t.isAlive():
                 threads[k] = genThread(k)
