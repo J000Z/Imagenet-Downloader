@@ -80,10 +80,10 @@ cursor = open('/root/imagenet/fall11_urls.txt', 'r')
 # cursor = collection.find({'status': {'$exists': False}}).sort("_id")
 cursor_lock = threading.Lock()
 skip = int(sys.argv[2])
+info['count'] = skip
 logging.debug('skip {}'.format(skip))
 for _ in xrange(skip):
     cursor.next()
-
 run_event = threading.Event()
 run_event.set()
 
