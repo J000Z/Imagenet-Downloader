@@ -101,8 +101,7 @@ threads_count = int(sys.argv[1])
 for i in range(threads_count):
     threads[i] = genThread(i)
     threads[i].start()
-    if threads_count > 20:
-        time.sleep(1)
+    time.sleep(0.5)
 
 try:
     while 1:
