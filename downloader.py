@@ -25,7 +25,7 @@ def process(row, collection, retry=0):
     id_, url = row.split()
     if 'status' in collection.find_one({"id": id_}):
         logging.debug('skip with status')
-        continue
+        return
     if retry == 2:
         collection.update_one({'id': id_},
                               {"$set": {'data': None,
