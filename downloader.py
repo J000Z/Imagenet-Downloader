@@ -18,37 +18,41 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s')
 
-info = {'count': 0., 'total': 14197121., 'cursor_valid': True}
+info = {'count': 0., 'total': 14197121.}
 
 
 def process(row, collection, retry=0):
+    id_, url = row.split()
+    if 'status' in collection.find_one({"id": id_}):
+        logging.debug('skip with status')
+        continue
     if retry == 2:
-        collection.update_one({'_id': row['_id']},
+        collection.update_one({'id': id_},
                               {"$set": {'data': None,
                                         'status': -2}})
-        logging.debug('{} {}'.format(row['id'], "max retry"))
+        logging.debug('{} {}'.format(id_, "max retry"))
         return
     try:
         r = requests.get(row['url'], timeout=1)
         if (r.status_code == 200):
             b = Binary(BytesIO(r.content).getvalue())
-            collection.update_one({'_id': row['_id']},
+            collection.update_one({'id': id_},
                                   {"$set": {'data': b,
                                             'status': 200}})
-            logging.debug('{} {}'.format(row['id'], 'done'))
+            logging.debug('{} {}'.format(id_, 'done'))
         else:
-            collection.update_one({'_id': row['_id']},
+            collection.update_one({'id': id_},
                                   {"$set": {'data': None,
                                             'status': r.status_code}})
-            logging.debug('{} {}'.format(row['id'], 'failed'))
+            logging.debug('{} {}'.format(id_, 'failed'))
     except requests.exceptions.ConnectionError:
         time.sleep(60)
         process(row, collection, retry+1)
     except Exception as e:
-        collection.update_one({'_id': row['_id']},
+        collection.update_one({'id': id_},
                               {"$set": {'data': None,
                                         'status': -1}})
-        logging.debug('{} {}'.format(row['id'], str(e)))
+        logging.debug('{} {}'.format(id_, str(e)))
 
 
 def worker(cur, cur_lock, collection, run_event, info):
@@ -61,10 +65,7 @@ def worker(cur, cur_lock, collection, run_event, info):
                 row = cur.next()
             except StopIteration:
                 logging.debug('StopIteration')
-                info['cursor_valid'] = False
                 break
-        if 'status' in row:
-            continue
         process(row, collection)
         logging.debug('progress {}/{} {}%'.format(
             info['count'],
@@ -74,7 +75,8 @@ def worker(cur, cur_lock, collection, run_event, info):
 
 client = MongoClient()
 collection = client.imagenet.urls
-cursor = collection.find({'status': {'$exists': False}}).sort("_id")
+cursor = open('/root/imagenet/fall11_urls.txt', 'r')
+# cursor = collection.find({'status': {'$exists': False}}).sort("_id")
 cursor_lock = threading.Lock()
 
 run_event = threading.Event()
@@ -97,12 +99,6 @@ for i in range(int(sys.argv[1])):
 try:
     while 1:
         time.sleep(1)
-        if not info['cursor_valid']:
-            with cursor_lock:
-                cursor = collection
-                .find({'status': {'$exists': False}})
-                .sort("_id")
-                info['cursor_valid'] = True
         for k, t in threads.items():
             if not t.isAlive():
                 threads[k] = genThread(k)
