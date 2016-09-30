@@ -68,10 +68,11 @@ def worker(cur, cur_lock, collection, run_event, info):
                 logging.debug('StopIteration')
                 break
         process(row, collection)
-        logging.debug('progress {}/{} {}%'.format(
-            info['count'],
-            info['total'],
-            info['count']/info['total']*100))
+        with cursor_lock:
+            logging.debug('progress {}/{} {}%'.format(
+                info['count'],
+                info['total'],
+                info['count']/info['total']*100))
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
 client = MongoClient(maxPoolSize=None)
