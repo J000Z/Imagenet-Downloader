@@ -6,6 +6,7 @@ from urlparse import urlparse
 import os
 from bson.binary import Binary
 import logging
+import sys
 
 
 client = MongoClient()
