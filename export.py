@@ -14,14 +14,14 @@ import sys
 
 client = MongoClient()
 collection = client.imagenet.urls
-cursor = collection.find({'data': {'$ne': None}}).sort("_id").skip(int(sys.argv[2]))
+cursor = collection.find({'data': {'$ne': None}}).skip(int(sys.argv[2]))
 folder = sys.argv[1]
 
 info = {'count': 0., 'total': 14197121.}
 row = None
 while True:
     try:
-        info['count'] += 1
+        # info['count'] += 1
         row = cursor.next()
     except StopIteration:
         logging.debug('StopIteration')
@@ -34,6 +34,9 @@ while True:
     ext = os.path.splitext(urlparse(url).path)[1]
     # construct file name
     filename = "{}/{}{}".format(folder, id_, ext)
+
+    if os.path.isfile(filename):
+        continue
 
     with open(filename, 'wb+') as f:
         f.write(data)
