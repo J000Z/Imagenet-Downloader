@@ -8,9 +8,9 @@ from bson.binary import Binary
 import logging
 import sys
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s')
+# logging.basicConfig(
+#     level=logging.DEBUG,
+#     format='[%(asctime)s] [%(levelname)s] (%(threadName)-10s) %(message)s')
 
 client = MongoClient()
 collection = client.imagenet.urls
@@ -38,11 +38,11 @@ while True:
     with open(filename, 'wb+') as f:
         f.write(data)
 
-    progress = info['count']/info['total']*100
-    logging.debug('progress {}/{} {}%'.format(
-        info['count'],
-        info['total'],
-        progress))
-
-
-logging.debug('done')
+#     progress = info['count']/info['total']*100
+#     logging.debug('progress {}/{} {}%'.format(
+#         info['count'],
+#         info['total'],
+#         progress))
+#
+#
+# logging.debug('done')
