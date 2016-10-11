@@ -11,7 +11,7 @@ import sys
 
 client = MongoClient()
 collection = client.imagenet.urls
-cursor = collection.find({'data': {'$ne': None}}).sort("_id")
+cursor = collection.find({'data': {'$ne': None}}).sort("_id").skip(int(sys.argv[2]))
 folder = sys.argv[1]
 
 info = {'count': 0., 'total': 14197121.}
