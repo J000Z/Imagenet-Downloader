@@ -35,9 +35,11 @@ while True:
     with open(filename, 'wb+') as f:
         f.write(data)
 
-    if info['count'] % 1000 == 0:
-        progress = info['count']/info['total']*100
-        logging.debug('progress {}/{} {}%'.format(
-            info['count'],
-            info['total'],
-            progress))
+    progress = info['count']/info['total']*100
+    logging.debug('progress {}/{} {}%'.format(
+        info['count'],
+        info['total'],
+        progress))
+
+
+logging.debug('done')
