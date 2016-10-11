@@ -21,7 +21,7 @@ info = {'count': 0., 'total': 14197121.}
 row = None
 while True:
     try:
-        # info['count'] += 1
+        info['count'] += 1
         row = cursor.next()
     except StopIteration:
         logging.debug('StopIteration')
@@ -30,22 +30,23 @@ while True:
     id_ = row['id']
     data = row['data']
 
-    # get extension
-    ext = os.path.splitext(urlparse(url).path)[1]
-    # construct file name
-    filename = "{}/{}{}".format(folder, id_, ext)
+    try:
 
-    if os.path.isfile(filename):
-        continue
+        # get extension
+        ext = os.path.splitext(urlparse(url).path)[1]
+        # construct file name
+        filename = "{}/{}{}".format(folder, id_, ext)
 
-    with open(filename, 'wb+') as f:
-        f.write(data)
+        if os.path.isfile(filename):
+            continue
 
-#     progress = info['count']/info['total']*100
-#     logging.debug('progress {}/{} {}%'.format(
-#         info['count'],
-#         info['total'],
-#         progress))
-#
-#
-# logging.debug('done')
+        with open(filename, 'wb+') as f:
+            f.write(data)
+
+    except Exception:
+        print 'error: ', id_
+
+    progress = info['count']/info['total']*100
+    print 'progress {}/{} {}%'.format(info['count'], info['total'], progress)
+
+print 'done'
