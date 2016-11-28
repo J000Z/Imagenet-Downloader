@@ -229,16 +229,20 @@ def main():
     queue = FifoSQLiteQueue(args.queue_path)
     rob = ROB(queue, config)
     cursor = None
-    if Config.CONFIG_TOTAL in config:  # has config
-        cursor = SourceCursor(args.urls_path, config[Config.CONFIG_LAST_ID])
-        logging.debug('resume from {}, with {} done'.format(
-            config[Config.CONFIG_LAST_ID],
-            config[Config.CONFIG_PROCESSED_COUNT]))
-    else:  # no config
+    if Config.CONFIG_TOTAL not in config:
         cursor = SourceCursor(args.urls_path)
         config[Config.CONFIG_TOTAL] = cursor.total()
         config[Config.CONFIG_PROCESSED_COUNT] = 0.0
         logging.debug('new Job')
+    elif Config.CONFIG_LAST_ID not in config:
+        cursor = SourceCursor(args.urls_path)
+        logging.debug('resume from None, with {} done'.format(
+            config[Config.CONFIG_PROCESSED_COUNT]))
+    else:
+        cursor = SourceCursor(args.urls_path, config[Config.CONFIG_LAST_ID])
+        logging.debug('resume from {}, with {} done'.format(
+            config[Config.CONFIG_LAST_ID],
+            config[Config.CONFIG_PROCESSED_COUNT]))
 
     cursor_lock = threading.Lock()
     run_event = threading.Event()
