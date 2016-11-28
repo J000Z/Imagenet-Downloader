@@ -249,7 +249,6 @@ def main():
     run_event.set()
 
     threads = {}
-    threads_count = int(sys.argv[1])
     for i in range(args.threads_count):
         threads[i] = threading.Thread(name='worker_{}'.format(i),
                                       target=worker,
