@@ -3,8 +3,6 @@
 import threading
 import logging
 import requests
-from io import BytesIO
-from bson.binary import Binary
 import time
 import sys
 from requests.adapters import HTTPAdapter
@@ -94,9 +92,9 @@ class Config(object):
         return func_wrapper
 
     def __init__(self, filename):
-        super(Configuration, self).__init__()
+        self._path = os.path.abspath(path)
+        self.shelve = shelve.open(self._path)
         self.mutex = Lock()
-        self.shelve = shelve.open(filename)
 
     @synchronized
     def __getitem__(self, key):
@@ -243,7 +241,7 @@ def main():
     if Config.CONFIG_TOTAL in config:  # has config
         cursor = SourceCursor(args.urls_path, config[Config.CONFIG_LAST_ID])
         logging.debug('resume from {}, with {} done'.format(
-            config[Config.CONFIG_LAST_ID]
+            config[Config.CONFIG_LAST_ID],
             config[Config.CONFIG_PROCESSED_COUNT]))
     else:  # no config
         cursor = SourceCursor(args.urls_path)
