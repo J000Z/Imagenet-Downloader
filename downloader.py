@@ -13,6 +13,7 @@ import shelve
 from collections import deque
 from queue import FifoSQLiteQueue
 from threading import Lock
+from urlparse import urlparse
 import argparse
 import os
 
@@ -182,6 +183,13 @@ def fetch(url, retry=0):
         return (False, None)
 
 
+def getFilename(url, id_):
+    # get extension
+    ext = os.path.splitext(urlparse(url).path)[1]
+    # construct file name
+    return "{}{}".format(id_, ext)
+
+
 def worker(cur, cursor_lock, run_event, rob, queue):
     logging.debug('start')
     id_ = None
@@ -200,9 +208,9 @@ def worker(cur, cursor_lock, run_event, rob, queue):
             break
         statsd.increment('url.process')
         logging.debug('start fetch {}'.format(id_))
-        result = fetch(url)
+        success, data = fetch(url)
         with cursor_lock:
-            rob.push(id_, result)
+            rob.push(id_, (success, (getFilename(url, id_), data)))
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
 
