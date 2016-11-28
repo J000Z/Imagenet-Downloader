@@ -179,10 +179,9 @@ def fetch(url, retry=0):
                          timeout=1,
                          headers={'User-Agent': random.choice(USER_AGENTS)})
         if r.status_code == 200:
-            b = r.content.getvalues()
             statsd.increment('url.success')
             logging.debug('fetch success')
-            return (True, b)
+            return (True, r.content)
         else:
             statsd.increment('url.failed')
             logging.debug('fetch failed {}'.format(r.status_code))
