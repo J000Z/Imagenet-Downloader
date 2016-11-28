@@ -13,6 +13,7 @@ import shelve
 from collections import deque
 from queue import FifoSQLiteQueue
 import argparse
+import os
 
 logging.basicConfig(
     level=logging.DEBUG,
