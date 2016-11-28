@@ -1,6 +1,8 @@
 import sqlite3
 from threading import Lock
 import os
+import io
+import pickle
 
 
 def synchronized(func):
@@ -9,6 +11,16 @@ def synchronized(func):
         with args[0].mutex:
             result = func(*args, **kwargs)
         return result
+    return func_wrapper
+
+
+def to_bytes(func):
+    def func_wrapper(*args, **kwargs):
+        r = func(*args, **kwargs)
+        if r is None:
+            return None
+        else:
+            return pickle.loads(r)
     return func_wrapper
 
 
@@ -36,7 +48,7 @@ class FifoSQLiteQueue(object):
     @synchronized
     def push(self, item):
         if not isinstance(item, bytes):
-            raise TypeError('Unsupported type: {}'.format(type(item).__name__))
+            item = pickle.dumps(item)
 
         with self._db as conn:
             conn.execute(self._sql_push, (item,))
@@ -50,6 +62,7 @@ class FifoSQLiteQueue(object):
     #             return (id_, item)
     #         conn.execute(self._sql_del, (id_,))
 
+    @to_bytes
     @synchronized
     def peek(self, id_=None):
         with self._db as conn:
