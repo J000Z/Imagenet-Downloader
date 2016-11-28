@@ -93,7 +93,7 @@ class Config(object):
             return result
         return func_wrapper
 
-    def __init__(self, filename):
+    def __init__(self, path):
         self._path = os.path.abspath(path)
         self.shelve = shelve.open(self._path)
         self.mutex = Lock()
