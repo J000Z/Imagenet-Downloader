@@ -64,9 +64,9 @@ class SourceCursor(object):
         self._path = os.path.abspath(path)
         self._db = sqlite3.Connection(self._path, timeout=60)
         self.mutex = Lock()
-        self.init(last_id)
+        self.moveTo(last_id)
 
-    def init(last_id=None):
+    def moveTo(self, last_id=None):
         if last_id is None:
             self.cursor = conn.execute(self._sql_first)
         else:
