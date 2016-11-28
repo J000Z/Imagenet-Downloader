@@ -172,32 +172,34 @@ def init_requests():
 def fetch(url, retry=0):
     if retry == 2:
         statsd.increment('url.failed')
-        logging.debug('{} {}'.format(id_, "max retry"))
+        logging.debug('fetch failed max retry')
         return (False, None)
     try:
         r = requests.get(url,
                          timeout=1,
                          headers={'User-Agent': random.choice(USER_AGENTS)})
-        if (r.status_code == 200):
+        if r.status_code == 200:
             b = r.content.getvalues()
-            logging.debug('{} {}'.format(id_, 'done'))
             statsd.increment('url.success')
+            logging.debug('fetch success')
             return (True, b)
         else:
             statsd.increment('url.failed')
-            logging.debug('{} {}'.format(id_, 'failed'))
+            logging.debug('fetch failed {}'.format(r.status_code))
             return (False, None)
     except requests.exceptions.ConnectionError:
         time.sleep(60)
         process(url, retry + 1)
     except Exception as e:
         statsd.increment('url.failed')
-        logging.debug('{} {}'.format(id_, str(e)))
+        logging.debug('fetch {}'.format(str(e)))
         return (False, None)
 
 
 def worker(cur, cursor_lock, run_event, rob, queue):
     logging.debug('start')
+    id_ = None
+    url = None
     while run_event.is_set():
         if len(queue) >= 5000:
             time.sleep(5)
@@ -210,6 +212,7 @@ def worker(cur, cursor_lock, run_event, rob, queue):
             logging.debug('StopIteration')
             break
         statsd.increment('url.process')
+        Log.d('start fetch {}'.format(id_))
         result = fetch(url)
         rob.push(id_, result)
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
@@ -266,10 +269,10 @@ def main():
             statsd.service_check(check_name='url.downloader',
                                  status=CheckStatus.OK,
                                  message='heart beat ok')
-            for k, t in threads.items():
-                if not t.isAlive():
-                    threads[k] = genThread(k)
-                    threads[k].start()
+            # for k, t in threads.items():
+            #     if not t.isAlive():
+            #         threads[k] = genThread(k)
+            #         threads[k].start()
     except KeyboardInterrupt:
         logging.debug('attempting to close threads')
         run_event.clear()
