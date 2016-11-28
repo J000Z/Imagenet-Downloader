@@ -64,6 +64,9 @@ class SourceCursor(object):
             else:
                 self.cursor = conn.execute(self._sql_move_to, (last_id,))
 
+    def close(self):
+        self._db.close()
+
     def next(self):
         return self.cursor.next()
 
@@ -236,15 +239,18 @@ def main():
     run_event = threading.Event()
     run_event.set()
 
+    def genThread(i):
+        return threading.Thread(name='worker_{}'.format(i),
+                                target=worker,
+                                args=(cursor,
+                                      cursor_lock,
+                                      run_event,
+                                      rob,
+                                      queue, ))
+
     threads = {}
     for i in range(args.threads_count):
-        threads[i] = threading.Thread(name='worker_{}'.format(i),
-                                      target=worker,
-                                      args=(cursor,
-                                            cursor_lock,
-                                            run_event,
-                                            rob,
-                                            queue, ))
+        threads[i] = genThread(i)
         threads[i].start()
         time.sleep(0.5)
 
@@ -254,10 +260,10 @@ def main():
             statsd.service_check(check_name='url.downloader',
                                  status=CheckStatus.OK,
                                  message='heart beat ok')
-            # for k, t in threads.items():
-            #     if not t.isAlive():
-            #         threads[k] = genThread(k)
-            #         threads[k].start()
+            for k, t in threads.items():
+                if not t.isAlive():
+                    threads[k] = genThread(k)
+                    threads[k].start()
     except KeyboardInterrupt:
         logging.debug('attempting to close threads')
         run_event.clear()
