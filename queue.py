@@ -1,5 +1,6 @@
 import sqlite3
 from threading import Lock
+import os
 
 
 class FifoSQLiteQueue(object):
