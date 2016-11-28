@@ -44,15 +44,6 @@ USER_AGENTS = [
 ]
 
 
-def synchronized(func):
-    def func_wrapper(*args, **kwargs):
-        result = None
-        with args[0].mutex:
-            result = func(*args, **kwargs)
-        return result
-    return func_wrapper
-
-
 class SourceCursor(object):
 
     _fields = 'ImageID, OriginalURL'
@@ -63,7 +54,7 @@ class SourceCursor(object):
     def __init__(self, path, last_id=None):
         self._path = os.path.abspath(path)
         self._db = sqlite3.Connection(self._path, check_same_thread=False)
-        self.mutex = Lock()
+        # self.mutex = Lock()
         self.moveTo(last_id)
 
     def moveTo(self, last_id=None):
@@ -73,11 +64,9 @@ class SourceCursor(object):
             else:
                 self.cursor = conn.execute(self._sql_move_to, (last_id,))
 
-    @synchronized
     def next(self):
         return self.cursor.next()
 
-    @synchronized
     def total(self):
         with self._db as conn:
             return next(conn.execute(self._sql_size))[0]
@@ -94,20 +83,16 @@ class Config(object):
         self.shelve = shelve.open(self._path)
         self.mutex = Lock()
 
-    @synchronized
     def __getitem__(self, key):
         return self.shelve.__getitem__(key)
 
-    @synchronized
     def __setitem__(self, key, value):
         self.shelve.__setitem__(key, value)
         self.shelve.sync()
 
-    @synchronized
     def __contains__(self, key):
         return self.shelve.__contains__(key)
 
-    @synchronized
     def inc(self, key):
         if key in self.shelve:
             self.shelve[key] += 1
@@ -116,7 +101,6 @@ class Config(object):
         self.shelve.sync()
         self.logProgress()
 
-    @synchronized
     def logProgress(self):
         progress = self.shelve[CONFIG_PROCESSED_COUNT] / self.shelve[CONFIG_TOTAL] * 100
         logging.debug('progress {}/{} {}%'.format(
@@ -125,7 +109,6 @@ class Config(object):
             progress))
         statsd.gauge('url.downloader.progress', progress)
 
-    @synchronized
     def close():
         self.shelve.close()
 
@@ -137,14 +120,12 @@ class ROB(object):
         self.d = {}
         self.o = output_queue
         self.c = config
-        self.mutex = Lock()
+        # self.mutex = Lock()
 
-    @synchronized
     def pending(self, id_):
         logging.debug('ROB pending')
         self.q.append(id_)
 
-    @synchronized
     def push(self, id_, obj):
         logging.debug('ROB push')
         self.d[id_] = obj
@@ -203,7 +184,7 @@ def worker(cur, cursor_lock, run_event, rob, queue):
     id_ = None
     url = None
     while run_event.is_set():
-        logging.debug('new run')
+        logging.debug('new run, len(queue)={}'.format(len(queue)))
         if len(queue) >= 5000:
             time.sleep(5)
             continue
@@ -217,7 +198,8 @@ def worker(cur, cursor_lock, run_event, rob, queue):
         statsd.increment('url.process')
         logging.debug('start fetch {}'.format(id_))
         result = fetch(url)
-        rob.push(id_, result)
+        with cursor_lock:
+            rob.push(id_, result)
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
 
