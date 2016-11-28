@@ -203,6 +203,7 @@ def worker(cur, cursor_lock, run_event, rob, queue):
     id_ = None
     url = None
     while run_event.is_set():
+        logging.debug('new run')
         if len(queue) >= 5000:
             time.sleep(5)
             continue
