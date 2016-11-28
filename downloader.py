@@ -102,10 +102,10 @@ class Config(object):
         self.logProgress()
 
     def logProgress(self):
-        progress = self.shelve[CONFIG_PROCESSED_COUNT] / self.shelve[CONFIG_TOTAL] * 100
+        progress = self.shelve[Config.CONFIG_PROCESSED_COUNT] / self.shelve[Config.CONFIG_TOTAL] * 100
         logging.debug('progress {}/{} {}%'.format(
-            self.shelve[CONFIG_PROCESSED_COUNT],
-            self.shelve[CONFIG_TOTAL],
+            self.shelve[Config.CONFIG_PROCESSED_COUNT],
+            self.shelve[Config.CONFIG_TOTAL],
             progress))
         statsd.gauge('url.downloader.progress', progress)
 
