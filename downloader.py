@@ -44,20 +44,21 @@ USER_AGENTS = [
 ]
 
 
+def synchronized(func):
+    def func_wrapper(*args, **kwargs):
+        args[0].mutex.acquire()
+        result = func(*args, **kwargs)
+        args[0].mutex.release()
+        return result
+    return func_wrapper
+
+
 class SourceCursor(object):
 
     _fields = 'ImageID, OriginalURL'
     _sql_first = 'SELECT {} FROM urls ORDER BY ImageID ASC limit 1'.format(_fields)
     _sql_move_to = 'SELECT {} FROM urls WHERE ImageID>? ORDER BY ImageID ASC'.format(_fields)
     _sql_size = 'SELECT COUNT(*) FROM queue'
-
-    def synchronized(func):
-        def func_wrapper(*args, **kwargs):
-            self.mutex.acquire()
-            result = func(*args, **kwargs)
-            self.mutex.release()
-            return result
-        return func_wrapper
 
     def __init__(self, path, last_id=None):
         self._path = os.path.abspath(path)
@@ -85,14 +86,6 @@ class Config(object):
     CONFIG_LAST_ID = 'LAST_ID'
     CONFIG_PROCESSED_COUNT = 'PROCESSED_COUNT'
     CONFIG_TOTAL = 'TOTAL'
-
-    def synchronized(func):
-        def func_wrapper(*args, **kwargs):
-            self.mutex.acquire()
-            result = func(*args, **kwargs)
-            self.mutex.release()
-            return result
-        return func_wrapper
 
     def __init__(self, path):
         self._path = os.path.abspath(path)
@@ -136,14 +129,6 @@ class Config(object):
 
 
 class ROB(object):
-
-    def synchronized(func):
-        def func_wrapper(*args, **kwargs):
-            self.mutex.acquire()
-            result = func(*args, **kwargs)
-            self.mutex.release()
-            return result
-        return func_wrapper
 
     def __init__(self, output_queue, config):
         self.q = deque()

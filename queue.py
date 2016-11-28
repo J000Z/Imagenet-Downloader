@@ -3,6 +3,15 @@ from threading import Lock
 import os
 
 
+def synchronized(func):
+    def func_wrapper(*args, **kwargs):
+        args[0].mutex.acquire()
+        result = func(*args, **kwargs)
+        args[0].mutex.release()
+        return result
+    return func_wrapper
+
+
 class FifoSQLiteQueue(object):
 
     _sql_create = (
@@ -14,14 +23,6 @@ class FifoSQLiteQueue(object):
     _sql_pop = 'SELECT id, item FROM queue ORDER BY id LIMIT 1'
     _sql_del = 'DELETE FROM queue WHERE id = ?'
     _sql_get = 'SELECT id, item FROM queue WHERE id = ?'
-
-    def synchronized(func):
-        def func_wrapper(*args, **kwargs):
-            self.mutex.acquire()
-            result = func(*args, **kwargs)
-            self.mutex.release()
-            return result
-        return func_wrapper
 
     def __init__(self, path):
         self._path = os.path.abspath(path)
