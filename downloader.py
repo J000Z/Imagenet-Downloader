@@ -62,7 +62,7 @@ class SourceCursor(object):
 
     def __init__(self, path, last_id=None):
         self._path = os.path.abspath(path)
-        self._db = sqlite3.Connection(self._path, timeout=60)
+        self._db = sqlite3.Connection(self._path, check_same_thread=False)
         self.mutex = Lock()
         self.moveTo(last_id)
 

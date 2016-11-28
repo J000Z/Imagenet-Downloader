@@ -26,7 +26,7 @@ class FifoSQLiteQueue(object):
 
     def __init__(self, path):
         self._path = os.path.abspath(path)
-        self._db = sqlite3.Connection(self._path, timeout=60)
+        self._db = sqlite3.Connection(self._path, check_same_thread=False)
         self._db.text_factory = bytes
         self.mutex = Lock()
         with self._db as conn:
