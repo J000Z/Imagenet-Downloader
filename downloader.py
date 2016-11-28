@@ -67,10 +67,11 @@ class SourceCursor(object):
         self.moveTo(last_id)
 
     def moveTo(self, last_id=None):
-        if last_id is None:
-            self.cursor = conn.execute(self._sql_first)
-        else:
-            self.cursor = conn.execute(self._sql_move_to, (last_id,))
+        with self._db as conn:
+            if last_id is None:
+                self.cursor = conn.execute(self._sql_first)
+            else:
+                self.cursor = conn.execute(self._sql_move_to, (last_id,))
 
     @synchronized
     def next(self):
