@@ -220,6 +220,7 @@ def main():
     parser.add_argument('config_path', help='The config path (will be created if not exists)')
     parser.add_argument('urls_path', help='The urls db path')
     parser.add_argument('queue_path', help='The buffer queue path')
+    parser.add_argument('threads_count', help='threads count', type=int)
     args = parser.parse_args()
 
     init_requests()
@@ -245,7 +246,7 @@ def main():
 
     threads = {}
     threads_count = int(sys.argv[1])
-    for i in range(threads_count):
+    for i in range(args.threads_count):
         threads[i] = threading.Thread(name='worker_{}'.format(i),
                                       target=worker,
                                       args=(cursor,
