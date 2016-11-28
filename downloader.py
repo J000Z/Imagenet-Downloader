@@ -287,3 +287,7 @@ def main():
     queue.close()
     config.close()
     logging.debug('all done')
+
+
+if __name__ == "__main__":
+    main()
