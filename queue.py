@@ -5,9 +5,9 @@ import os
 
 def synchronized(func):
     def func_wrapper(*args, **kwargs):
-        args[0].mutex.acquire()
-        result = func(*args, **kwargs)
-        args[0].mutex.release()
+        result = None
+        with args[0].mutex:
+            result = func(*args, **kwargs)
         return result
     return func_wrapper
 

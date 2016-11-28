@@ -46,9 +46,9 @@ USER_AGENTS = [
 
 def synchronized(func):
     def func_wrapper(*args, **kwargs):
-        args[0].mutex.acquire()
-        result = func(*args, **kwargs)
-        args[0].mutex.release()
+        result = None
+        with args[0].mutex:
+            result = func(*args, **kwargs)
         return result
     return func_wrapper
 
@@ -141,14 +141,17 @@ class ROB(object):
 
     @synchronized
     def pending(self, id_):
+        logging.debug('ROB pending')
         self.q.append(id_)
 
     @synchronized
     def push(self, id_, obj):
+        logging.debug('ROB push')
         self.d[id_] = obj
         self.check()
 
     def check(self):
+        logging.debug('ROB check')
         if len(self.q) == 0:
             return
         id_ = self.q[0]
