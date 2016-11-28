@@ -212,7 +212,7 @@ def worker(cur, cursor_lock, run_event, rob, queue):
             logging.debug('StopIteration')
             break
         statsd.increment('url.process')
-        logging.d('start fetch {}'.format(id_))
+        logging.debug('start fetch {}'.format(id_))
         result = fetch(url)
         rob.push(id_, result)
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
