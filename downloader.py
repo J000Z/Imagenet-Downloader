@@ -12,6 +12,7 @@ import random
 import shelve
 from collections import deque
 from queue import FifoSQLiteQueue
+from threading import Lock
 import argparse
 import os
 
