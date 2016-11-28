@@ -56,7 +56,7 @@ def synchronized(func):
 class SourceCursor(object):
 
     _fields = 'ImageID, OriginalURL'
-    _sql_first = 'SELECT {} FROM urls ORDER BY ImageID ASC limit 1'.format(_fields)
+    _sql_first = 'SELECT {} FROM urls ORDER BY ImageID ASC'.format(_fields)
     _sql_move_to = 'SELECT {} FROM urls WHERE ImageID>? ORDER BY ImageID ASC'.format(_fields)
     _sql_size = 'SELECT COUNT(*) FROM urls'
 
