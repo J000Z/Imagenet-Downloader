@@ -58,14 +58,15 @@ class SourceCursor(object):
     _fields = 'ImageID, OriginalURL'
     _sql_first = 'SELECT {} FROM urls ORDER BY ImageID ASC limit 1'.format(_fields)
     _sql_move_to = 'SELECT {} FROM urls WHERE ImageID>? ORDER BY ImageID ASC'.format(_fields)
-    _sql_size = 'SELECT COUNT(*) FROM queue'
+    _sql_size = 'SELECT COUNT(*) FROM urls'
 
     def __init__(self, path, last_id=None):
         self._path = os.path.abspath(path)
         self._db = sqlite3.Connection(self._path, timeout=60)
         self.mutex = Lock()
+        self.init(last_id)
 
-    def initialCursor(last_id=None):
+    def init(last_id=None):
         if last_id is None:
             self.cursor = conn.execute(self._sql_first)
         else:
