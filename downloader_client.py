@@ -2,6 +2,7 @@ from ws4py.client.threadedclient import WebSocketClient
 import pickle
 import logging
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description='urls downloader server')
 parser.add_argument('folder', help='folder to put images')

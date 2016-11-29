@@ -127,11 +127,11 @@ class ROB(object):
         # self.mutex = Lock()
 
     def pending(self, id_):
-        logging.debug('ROB pending')
+        # logging.debug('ROB pending')
         self.q.append(id_)
 
     def push(self, id_, obj):
-        logging.debug('ROB push')
+        # logging.debug('ROB push')
         self.d[id_] = obj
         self.check()
 
@@ -144,8 +144,11 @@ class ROB(object):
             success, data = self.d[id_]
             if success:
                 self.o.push(data)
+            logging.debug('ROB success & push')
             self.c.inc(Config.CONFIG_PROCESSED_COUNT)
+            logging.debug('ROB inc config count')
             self.c[Config.CONFIG_LAST_ID] = id_
+            logging.debug('ROB update config id')
             del self.d[id_]
             self.q.popleft()
             self.check()
