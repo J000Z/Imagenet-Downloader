@@ -51,7 +51,7 @@ class Handler(WebSocket):
     def receiveAck(self, id_):
         del queue[id_]
         logging.debug('pop {}'.format(id_))
-        receiveNext()
+        self.receiveNext()
 
     def received_message(self, message):
         message = pickle.loads(message.data)
@@ -59,7 +59,7 @@ class Handler(WebSocket):
             logging.debug('auth {}?={}'.format(message[KEY], key))
             if message[KEY] == key:
                 self.auth = True
-                return receiveNext()
+                return self.receiveNext()
         if not self.auth:
             logging.debug('not authenticated request')
             return
