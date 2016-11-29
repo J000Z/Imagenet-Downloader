@@ -62,7 +62,6 @@ class FifoSQLiteQueue(object):
     #             return (id_, item)
     #         conn.execute(self._sql_del, (id_,))
 
-    @to_bytes
     @synchronized
     def peek(self, id_=None):
         with self._db as conn:
