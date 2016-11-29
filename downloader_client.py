@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser(description='urls downloader server')
 parser.add_argument('folder', help='folder to put images')
 parser.add_argument('address', help='remote address')
 parser.add_argument('key', help='password')
+args = parser.parse_args()
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -25,16 +26,16 @@ FLAG_AUTH = 3
 
 class DownloaderClient(WebSocketClient):
 
-    def requestNext(self):
-        payload = {FLAG: FLAG_NEXT}
-        self.send(pickle.dumps(payload), True)
-        logging.debug('request next')
+    # def requestNext(self):
+    #     payload = {FLAG: FLAG_NEXT}
+    #     self.send(pickle.dumps(payload), True)
+    #     logging.debug('request next')
 
     def processData(self, data):
         filename, data = pickle.loads(data)
         path = '{}/{}'.format(args.folder, filename)
         if os.path.isfile(path):
-            continue
+            return
         with open(path, 'wb+') as f:
             f.write(data)
         logging.debug('write data {}'.format(filename))
@@ -43,9 +44,12 @@ class DownloaderClient(WebSocketClient):
         payload = {FLAG: FLAG_ACK, ID: id_}
         self.send(pickle.dumps(payload), True)
 
-    def opened(self):
+    def requestAuth(self):
         payload = {FLAG: FLAG_AUTH, KEY: args.key}
         self.send(pickle.dumps(payload), True)
+
+    def opened(self):
+        self.requestAuth()
 
     def closed(self, code, reason=None):
         logging.debug("Closed down {} {}".format(code, reason))
@@ -55,7 +59,7 @@ class DownloaderClient(WebSocketClient):
         if message[FLAG] == FLAG_DATA:
             self.processData(message[DATA])
             self.requestAck(message[ID])
-            self.requestNext()
+            # self.requestNext()
         else:
             logging.debug('unsupportted message flag {}'.format(message[FLAG]))
 

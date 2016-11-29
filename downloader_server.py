@@ -6,6 +6,7 @@ from queue import FifoSQLiteQueue
 import pickle
 import logging
 import argparse
+import time
 
 
 parser = argparse.ArgumentParser(description='urls downloader server')
@@ -37,21 +38,34 @@ class Handler(WebSocket):
         self.auth = False
         logging.debug('connection opened from {}'.format(self.peer_address))
 
+    def receiveNext(self):
+        row = queue.peek()
+        while row is None:
+            row = queue.peek()
+            time.sleep(10)
+        id_, data = row
+        payload = {FLAG: FLAG_DATA, ID: id_, DATA: data}
+        self.send(pickle.dumps(payload), True)
+
+    def receiveAck(self, id_):
+        del queue[id_]
+        receiveNext()
+
     def received_message(self, message):
         message = pickle.loads(message.data)
         if message[FLAG] == FLAG_AUTH:
             if message[KEY] == key:
                 self.auth = True
+                return receiveNext()
         if not self.auth:
             logging.debug('not authenticated request')
+            return
         if message[FLAG] == FLAG_ACK:
             id_ = message[ID]
-            del queue[id_]
+            self.receiveAck(id_)
             logging.debug('pop {}'.format(id_))
         elif message[FLAG] == FLAG_NEXT:
-            id_, data = queue.peek()
-            payload = {FLAG: FLAG_DATA, ID: id_, DATA: data}
-            self.send(pickle.dumps(payload), True)
+            self.receiveNext()
             logging.debug('send {}'.format(id_))
         else:
             logging.debug('unsupportted message flag {}'.format(message[FLAG]))
