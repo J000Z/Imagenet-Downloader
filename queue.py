@@ -45,7 +45,6 @@ class FifoSQLiteQueue(object):
         self.mutex = Lock()
         with self._db as conn:
             conn.execute(self._sql_create)
-        self.size = self.size()
 
     @synchronized
     def push(self, item):
@@ -54,7 +53,6 @@ class FifoSQLiteQueue(object):
 
         with self._db as conn:
             conn.execute(self._sql_push, (item,))
-        self.size += 1
         statsd.increment('queue.push')
 
     # @synchronized
@@ -79,7 +77,6 @@ class FifoSQLiteQueue(object):
     def delete(self, id_):
         with self._db as conn:
             conn.execute(self._sql_del, (id_,))
-            self.size -= 1
         statsd.increment('queue.pop')
 
     @synchronized
@@ -89,11 +86,6 @@ class FifoSQLiteQueue(object):
         if not size:
             os.remove(self._path)
 
-    @synchronized
-    def size(self):
-        with self._db as conn:
-            return next(conn.execute(self._sql_size))[0]
-
     def __getitem__(self, id_):
         return self.peek(id_)
 
@@ -102,4 +94,5 @@ class FifoSQLiteQueue(object):
 
     @synchronized
     def __len__(self):
-        return self.size
+        with self._db as conn:
+            return next(conn.execute(self._sql_size))[0]
