@@ -56,7 +56,7 @@ class Handler(WebSocket):
     def received_message(self, message):
         message = pickle.loads(message.data)
         if message[FLAG] == FLAG_AUTH:
-            logging.debug('auth {}?={}'.format(id_, key))
+            logging.debug('auth {}?={}'.format(message[KEY], key))
             if message[KEY] == key:
                 self.auth = True
                 return receiveNext()
