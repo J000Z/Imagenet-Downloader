@@ -3,6 +3,8 @@ from threading import Lock
 import os
 import io
 import pickle
+from datadog import statsd
+from datadog.api.constants import CheckStatus
 
 
 def synchronized(func):
@@ -53,6 +55,7 @@ class FifoSQLiteQueue(object):
         with self._db as conn:
             conn.execute(self._sql_push, (item,))
         self.size += 1
+        statsd.increment('queue.push')
 
     # @synchronized
     # def pop(self):
@@ -77,6 +80,7 @@ class FifoSQLiteQueue(object):
         with self._db as conn:
             conn.execute(self._sql_del, (id_,))
             self.size -= 1
+        statsd.increment('queue.pop')
 
     @synchronized
     def close(self):

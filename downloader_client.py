@@ -28,6 +28,7 @@ class DownloaderClient(WebSocketClient):
     def requestNext(self):
         payload = {FLAG: FLAG_NEXT}
         self.send(pickle.dumps(payload), True)
+        logging.debug('request next')
 
     def processData(self, data):
         filename, data = pickle.loads(data)
@@ -36,6 +37,7 @@ class DownloaderClient(WebSocketClient):
             continue
         with open(path, 'wb+') as f:
             f.write(data)
+        logging.debug('write data {}'.format(filename))
 
     def requestAck(self, id_):
         payload = {FLAG: FLAG_ACK, ID: id_}

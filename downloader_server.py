@@ -1,10 +1,11 @@
-from ws4py.async_websocket import EchoWebSocket
+from wsgiref.simple_server import make_server
+from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler
+from ws4py.server.wsgiutils import WebSocketWSGIApplication
 from queue import FifoSQLiteQueue
 import pickle
 import logging
 import argparse
 
-loop = asyncio.get_event_loop()
 
 parser = argparse.ArgumentParser(description='urls downloader server')
 parser.add_argument('queue_path', help='The buffer queue path')
@@ -54,14 +55,11 @@ class Handler(WebSocket):
         else:
             logging.debug('unsupportted message flag {}'.format(message[FLAG]))
 
-
-def start_server():
-    proto_factory = lambda: WebSocketProtocol(Handler)
-    return loop.create_server(proto_factory, '', args.port)
-
 try:
-    s = loop.run_until_complete(start_server())
-    logging.debug('serving on {}'.format(s.sockets[0].getsockname()))
-    loop.run_forever()
+    server = make_server('', args.port, server_class=WSGIServer,
+                         handler_class=WebSocketWSGIRequestHandler,
+                         app=WebSocketWSGIApplication(handler_cls=Handler))
+    server.initialize_websockets_manager()
+    server.serve_forever()
 except KeyboardInterrupt:
     queue.close()
