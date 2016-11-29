@@ -16,6 +16,7 @@ from threading import Lock
 from urlparse import urlparse
 import argparse
 import os
+import csv
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -52,28 +53,40 @@ class SourceCursor(object):
     _sql_move_to = 'SELECT {} FROM urls WHERE ImageID>? ORDER BY ImageID ASC'.format(_fields)
     _sql_size = 'SELECT COUNT(*) FROM urls'
 
-    def __init__(self, path, last_id=None):
+    def __init__(self, path, skip=0):
         self._path = os.path.abspath(path)
-        self._db = sqlite3.Connection(self._path, check_same_thread=False)
+        # self._db = sqlite3.Connection(self._path, check_same_thread=False)
         # self.mutex = Lock()
-        self.moveTo(last_id)
+        self.file = open(self._path, 'r')
+        self.cursor = csv.reader(self.file)
+        for _ in xrange(int(skip)):
+            self.cursor.next()
+        # self.moveTo(last_id)
 
-    def moveTo(self, last_id=None):
-        with self._db as conn:
-            if last_id is None:
-                self.cursor = conn.execute(self._sql_first)
-            else:
-                self.cursor = conn.execute(self._sql_move_to, (last_id,))
+    # def moveTo(self, last_id=None):
+    #     with self._db as conn:
+    #         if last_id is None:
+    #             self.cursor = conn.execute(self._sql_first)
+    #         else:
+    #             self.cursor = conn.execute(self._sql_move_to, (last_id,))
 
     def close(self):
-        self._db.close()
+        self.file.close()
 
     def next(self):
-        return self.cursor.next()
+        row = self.cursor.next()
+        r = (row[0], row[2])
+        logging.debug('source next {}'.format(r))
+        return r
 
     def total(self):
-        with self._db as conn:
-            return next(conn.execute(self._sql_size))[0]
+        count = 0
+        with open(self._path, 'r') as f:
+            for _ in f:
+                count += 1
+        return count
+        # with self._db as conn:
+        #     return next(conn.execute(self._sql_size))[0]
 
 
 class Config(object):
@@ -147,8 +160,7 @@ class ROB(object):
             logging.debug('ROB success & push')
             self.c.inc(Config.CONFIG_PROCESSED_COUNT)
             logging.debug('ROB inc config count')
-            self.c[Config.CONFIG_LAST_ID] = id_
-            logging.debug('ROB update config id')
+            # self.c[Config.CONFIG_LAST_ID] = id_
             del self.d[id_]
             self.q.popleft()
             self.check()
@@ -240,15 +252,9 @@ def main():
         config[Config.CONFIG_TOTAL] = cursor.total()
         config[Config.CONFIG_PROCESSED_COUNT] = 0.0
         logging.debug('new Job')
-    elif Config.CONFIG_LAST_ID not in config:
-        cursor = SourceCursor(args.urls_path)
-        logging.debug('resume from None, with {} done'.format(
-            config[Config.CONFIG_PROCESSED_COUNT]))
     else:
-        cursor = SourceCursor(args.urls_path, config[Config.CONFIG_LAST_ID])
-        logging.debug('resume from {}, with {} done'.format(
-            config[Config.CONFIG_LAST_ID],
-            config[Config.CONFIG_PROCESSED_COUNT]))
+        cursor = SourceCursor(args.urls_path, config[Config.CONFIG_PROCESSED_COUNT])
+        logging.debug('resume with {} done'.format(config[Config.CONFIG_PROCESSED_COUNT]))
 
     cursor_lock = threading.Lock()
     run_event = threading.Event()
