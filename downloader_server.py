@@ -46,14 +46,17 @@ class Handler(WebSocket):
         id_, data = row
         payload = {FLAG: FLAG_DATA, ID: id_, DATA: data}
         self.send(pickle.dumps(payload), True)
+        logging.debug('send {}'.format(id_))
 
     def receiveAck(self, id_):
         del queue[id_]
+        logging.debug('pop {}'.format(id_))
         receiveNext()
 
     def received_message(self, message):
         message = pickle.loads(message.data)
         if message[FLAG] == FLAG_AUTH:
+            logging.debug('auth {}?={}'.format(id_, key))
             if message[KEY] == key:
                 self.auth = True
                 return receiveNext()
@@ -63,10 +66,8 @@ class Handler(WebSocket):
         if message[FLAG] == FLAG_ACK:
             id_ = message[ID]
             self.receiveAck(id_)
-            logging.debug('pop {}'.format(id_))
         elif message[FLAG] == FLAG_NEXT:
             self.receiveNext()
-            logging.debug('send {}'.format(id_))
         else:
             logging.debug('unsupportted message flag {}'.format(message[FLAG]))
 
