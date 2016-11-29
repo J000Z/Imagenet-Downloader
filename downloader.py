@@ -204,8 +204,10 @@ def worker(cur, cursor_lock, run_event, rob, queue):
             continue
         try:
             with cursor_lock:
+                logging.debug('lock acquire')
                 id_, url = cur.next()
                 rob.pending(id_)
+                logging.debug('lock release')
         except StopIteration:
             logging.debug('StopIteration')
             break
@@ -213,7 +215,9 @@ def worker(cur, cursor_lock, run_event, rob, queue):
         logging.debug('start fetch {}'.format(id_))
         success, data = fetch(url)
         with cursor_lock:
+            logging.debug('lock acquire')
             rob.push(id_, (success, (getFilename(url, id_), data)))
+            logging.debug('lock release')
     logging.debug('stop with run_event={}'.format(run_event.is_set()))
 
 
