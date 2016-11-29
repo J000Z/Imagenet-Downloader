@@ -1,4 +1,5 @@
 from wsgiref.simple_server import make_server
+from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import WSGIServer, WebSocketWSGIRequestHandler
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 from queue import FifoSQLiteQueue
